@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lične finansije</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --income: #3fb950;
+      --expense: #f85149;
+      --accent: #58a6ff;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: var(--text);
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid var(--card);
+      background: var(--card);
+      color: var(--text);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .tabs button:hover { background: #243447; }
+    .tabs button.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .form-row label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+    input, select {
+      padding: 10px 12px;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    input[type="number"] { width: 120px; }
+    input[type="date"] { width: 160px; }
+    input[type="text"] { flex: 1; min-width: 160px; }
+    select { min-width: 140px; }
+    button.primary {
+      padding: 12px 20px;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    button.primary:hover { filter: brightness(1.1); }
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .summary .box {
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .summary .box.prihod { background: rgba(63, 185, 80, 0.15); color: var(--income); }
+    .summary .box.trošak { background: rgba(248, 81, 73, 0.15); color: var(--expense); }
+    .summary .box.bilans { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+    .summary .box .value { font-size: 1.25rem; font-weight: 700; }
+    .summary .box .label { font-size: 0.8rem; color: var(--muted); }
+    .transaction-list { list-style: none; padding: 0; margin: 0; }
+    .transaction-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid #30363d;
+      gap: 12px;
+    }
+    .transaction-list li:last-child { border-bottom: none; }
+    .transaction-list .amount.income { color: var(--income); }
+    .transaction-list .amount.expense { color: var(--expense); }
+    .transaction-list .date { font-size: 0.85rem; color: var(--muted); }
+    .transaction-list .desc { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .filter-row { margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .filter-row label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+    .empty { text-align: center; color: var(--muted); padding: 32px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lične finansije</h1>
+
+    <div class="tabs">
+      <button type="button" data-tab="dnevni" class="active">Dnevni</button>
+      <button type="button" data-tab="mesecni">Mesečni</button>
+      <button type="button" data-tab="godisnji">Godišnji</button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Dodaj transakciju</h3>
+      <div class="form-row">
+        <div>
+          <label>Iznos</label>
+          <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required>
+        </div>
+        <div>
+          <label>Tip</label>
+          <select id="type">
+            <option value="prihod">Prihod</option>
+            <option value="trošak">Trošak</option>
+          </select>
+        </div>
+        <div>
+          <label>Datum</label>
+          <input type="date" id="date" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div style="flex:1; min-width:200px;">
+          <label>Opis / kategorija</label>
+          <input type="text" id="description" placeholder="npr. Plata, Hrana, Računi...">
+        </div>
+      </div>
+      <button type="button" class="primary" id="addBtn">Dodaj</button>
+    </div>
+
+    <div id="panel-dnevni" class="panel active">
+      <div class="card">
+        <div class="filter-row">
+          <div>
+            <label>Datum</label>
+            <input type="date" id="filter-day">
+          </div>
+        </div>
+        <div class="summary" id="daily-summary"></div>
+        <ul class="transaction-list" id="list-daily"></ul>
+        <p class="empty" id="empty-daily" style="display:none;">Nema transakcija za ovaj dan.</p>
+      </div>
+    </div>
+
+    <div id="panel-mesecni" class="panel">
+      <div class="card">
+        <div class="filter-row">
+          <div>
+            <label>Mesec</label>
+            <input type="month" id="filter-month">
+          </div>
+        </div>
+        <div class="summary" id="monthly-summary"></div>
+        <ul class="transaction-list" id="list-monthly"></ul>
+        <p class="empty" id="empty-monthly" style="display:none;">Nema transakcija za ovaj mesec.</p>
+      </div>
+    </div>
+
+    <div id="panel-godisnji" class="panel">
+      <div class="card">
+        <div class="filter-row">
+          <div>
+            <label>Godina</label>
+            <input type="number" id="filter-year" min="2000" max="2100" placeholder="2025">
+          </div>
+        </div>
+        <div class="summary" id="yearly-summary"></div>
+        <ul class="transaction-list" id="list-yearly"></ul>
+        <p class="empty" id="empty-yearly" style="display:none;">Nema transakcija za ovu godinu.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'licne-finansije-transakcije';
+
+    function getTransactions() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTransactions(arr) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+
+    function setToday(el) {
+      const d = new Date();
+      el.value = d.toISOString().slice(0, 10);
+    }
+
+    function setCurrentMonth(el) {
+      const d = new Date();
+      el.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    function setCurrentYear(el) {
+      el.value = new Date().getFullYear();
+    }
+
+    const amountEl = document.getElementById('amount');
+    const typeEl = document.getElementById('type');
+    const dateEl = document.getElementById('date');
+    const descEl = document.getElementById('description');
+    const addBtn = document.getElementById('addBtn');
+    const filterDay = document.getElementById('filter-day');
+    const filterMonth = document.getElementById('filter-month');
+    const filterYear = document.getElementById('filter-year');
+
+    setToday(dateEl);
+    setToday(filterDay);
+    setCurrentMonth(filterMonth);
+    setCurrentYear(filterYear);
+
+    addBtn.addEventListener('click', () => {
+      const amount = parseFloat(amountEl.value);
+      if (!amount || amount <= 0) return;
+      const type = typeEl.value;
+      const date = dateEl.value;
+      const description = (descEl.value || '').trim() || (type === 'prihod' ? 'Prihod' : 'Trošak');
+      const list = getTransactions();
+      list.push({
+        id: Date.now(),
+        amount: type === 'trošak' ? -amount : amount,
+        type,
+        date,
+        description
+      });
+      saveTransactions(list);
+      amountEl.value = '';
+      descEl.value = '';
+      setToday(dateEl);
+      refreshAll();
+    });
+
+    function formatMoney(n) {
+      return new Intl.NumberFormat('sr-RS', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    }
+
+    function renderSummary(containerId, prihod, trosak) {
+      const el = document.getElementById(containerId);
+      const bilans = prihod - Math.abs(trosak);
+      el.innerHTML = `
+        <div class="box prihod"><div class="value">${formatMoney(prihod)}</div><div class="label">Prihod</div></div>
+        <div class="box trošak"><div class="value">${formatMoney(Math.abs(trosak))}</div><div class="label">Trošak</div></div>
+        <div class="box bilans"><div class="value">${formatMoney(bilans)}</div><div class="label">Bilans</div></div>
+      `;
+    }
+
+    function renderList(listElId, emptyElId, items) {
+      const listEl = document.getElementById(listElId);
+      const emptyEl = document.getElementById(emptyElId);
+      if (!items.length) {
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      listEl.innerHTML = items
+        .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
+        .map(t => `
+          <li>
+            <span class="date">${t.date}</span>
+            <span class="desc" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</span>
+            <span class="amount ${t.amount >= 0 ? 'income' : 'expense'}">${t.amount >= 0 ? '+' : ''}${formatMoney(t.amount)}</span>
+          </li>
+        `).join('');
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function refreshDaily() {
+      const day = filterDay.value;
+      const list = getTransactions().filter(t => t.date === day);
+      const prihod = list.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+      const trosak = list.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+      renderSummary('daily-summary', prihod, trosak);
+      renderList('list-daily', 'empty-daily', list);
+    }
+
+    function refreshMonthly() {
+      const month = filterMonth.value;
+      if (!month) return;
+      const [y, m] = month.split('-').map(Number);
+      const list = getTransactions().filter(t => {
+        const [ty, tm] = t.date.split('-').map(Number);
+        return ty === y && tm === m;
+      });
+      const prihod = list.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+      const trosak = list.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+      renderSummary('monthly-summary', prihod, trosak);
+      renderList('list-monthly', 'empty-monthly', list);
+    }
+
+    function refreshYearly() {
+      const year = parseInt(filterYear.value, 10);
+      if (!year) return;
+      const list = getTransactions().filter(t => t.date.startsWith(String(year)));
+      const prihod = list.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+      const trosak = list.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+      renderSummary('yearly-summary', prihod, trosak);
+      renderList('list-yearly', 'empty-yearly', list);
+    }
+
+    function refreshAll() {
+      refreshDaily();
+      refreshMonthly();
+      refreshYearly();
+    }
+
+    filterDay.addEventListener('change', refreshDaily);
+    filterMonth.addEventListener('change', refreshMonthly);
+    filterYear.addEventListener('input', refreshYearly);
+    filterYear.addEventListener('change', refreshYearly);
+
+    document.querySelectorAll('.tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    refreshAll();
+  </script>
+</body>
+</html>
